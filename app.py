@@ -3,7 +3,7 @@ import os
 import subprocess
 import json
 from datetime import datetime
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file, abort
 
 app = Flask(__name__)
 
@@ -30,18 +30,22 @@ def save_scan_history(history):
 def index():
     history = load_scan_history()
     drives = get_drives()
-    return render_template('index.html', history=history, drives=drives)
+    now = datetime.now()
+    return render_template('index.html', history=history, drives=drives, now=now)
 
 @app.route('/search', methods=['GET'])
 def search():
     query = request.args.get('q', '').lower()
     results = []
+
+    if not query:
+        return jsonify([])  # Devuelve una lista vacía si no hay query
     
     # Buscar en todos los archivos TXT
     for filename in os.listdir(CATALOGS_DIR):
         if filename.endswith('.txt'):
             filepath = os.path.join(CATALOGS_DIR, filename)
-            with open(filepath, 'r', encoding='utf-8') as file:
+            with open(filepath, 'r', encoding='latin-1') as file:
                 for line in file:
                     if query in line.lower():
                         disk_name = filename.replace('.txt', '')
@@ -106,6 +110,26 @@ def get_drives():
             except:
                 continue
     return drives
+
+@app.route('/catalog/<filename>')
+def view_catalog(filename):
+    print(f"Recibido filename: '{filename}'")
+    # Seguridad básica: solo permite archivos .txt y sin rutas
+    if not filename.endswith('.txt') or '/' in filename or '\\' in filename:
+        print("Nombre de archivo inválido")
+        abort(404)
+    filepath = os.path.join(CATALOGS_DIR, filename)
+    print(f"Ruta buscada: '{filepath}'")
+    if not os.path.exists(filepath):
+        print("Archivo no encontrado en el sistema de archivos")
+        abort(404)
+    try:
+        with open(filepath, 'r', encoding='latin-1') as f:
+            content = f.read()
+        return jsonify({"content": content, "filename": filename})
+    except Exception as e:
+        print(f"Error al abrir el archivo: {e}")
+        abort(500)
 
 if __name__ == '__main__':
     app.run(debug=True)

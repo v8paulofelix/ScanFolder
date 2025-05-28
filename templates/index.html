@@ -423,26 +423,23 @@
                 button.addEventListener('click', function(e) {
                     e.preventDefault();
                     const fileName = this.dataset.file;
-                    
-                    // Buscar en el catálogo
-                    fetch(`/search?q=`)
+
+                    fetch(`/catalog/${encodeURIComponent(fileName)}`)
                         .then(response => response.json())
                         .then(data => {
-                            const catalogData = data.filter(item => item.disk === fileName.replace('.txt', ''));
-                            
-                            if (catalogData.length > 0) {
-                                searchInput.value = '';
-                                resultsContainer.innerHTML = `
-                                    <div class="mb-3">
-                                        <h5 class="mb-3">Contenido de ${fileName.replace('.txt', '')}</h5>
-                                        <div class="result-item">
-                                            <div class="path">${catalogData[0].path}</div>
-                                        </div>
-                                    </div>`;
-                                
-                                // Desplazar a la sección de resultados
-                                resultsContainer.scrollIntoView({behavior: 'smooth'});
-                            }
+                            resultsContainer.innerHTML = `
+                                <div class="mb-3">
+                                    <h5 class="mb-3">Contenido de ${data.filename.replace('.txt', '')}</h5>
+                                    <pre style="max-height:400px;overflow:auto;background:#f8f9fa;padding:1em;border-radius:8px;">${data.content}</pre>
+                                </div>`;
+                            resultsContainer.scrollIntoView({behavior: 'smooth'});
+                        })
+                        .catch(() => {
+                            resultsContainer.innerHTML = `
+                                <div class="alert alert-danger mt-3">
+                                    <i class="fas fa-times-circle me-2"></i> 
+                                    No se pudo cargar el catálogo.
+                                </div>`;
                         });
                 });
             });
