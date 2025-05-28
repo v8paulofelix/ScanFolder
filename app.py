@@ -131,5 +131,23 @@ def view_catalog(filename):
         print(f"Error al abrir el archivo: {e}")
         abort(500)
 
+@app.route('/delete_catalog', methods=['POST'])
+def delete_catalog():
+    filename = request.form.get('filename')
+    if not filename or not filename.endswith('.txt') or '/' in filename or '\\' in filename:
+        return jsonify({'success': False, 'error': 'Nombre de archivo inválido'}), 400
+    filepath = os.path.join(CATALOGS_DIR, filename)
+    if not os.path.exists(filepath):
+        return jsonify({'success': False, 'error': 'El archivo no existe'}), 404
+    try:
+        os.remove(filepath)
+        # Quitar del historial
+        history = load_scan_history()
+        history = [h for h in history if h.get('file') != filename]
+        save_scan_history(history)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
