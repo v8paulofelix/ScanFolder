@@ -193,16 +193,19 @@
                         <div class="list-group" id="historyList">
                             {% if history %}
                                 {% for scan in history %}
-                                <div class="history-item">
+                                <div class="history-item" data-file="{{ scan.file }}">
                                     <div class="d-flex justify-content-between">
                                         <strong>{{ scan.name }}</strong>
                                         <small class="text-muted">{{ scan.date }}</small>
                                     </div>
                                     <div class="text-muted small">{{ scan.path }}</div>
-                                    <div class="mt-1">
+                                    <div class="mt-1 d-flex gap-2">
                                         <a href="#" class="btn btn-sm btn-outline-primary view-scan" data-file="{{ scan.file }}">
                                             <i class="fas fa-eye me-1"></i> Ver
                                         </a>
+                                        <button class="btn btn-sm btn-outline-danger delete-catalog" data-file="{{ scan.file }}">
+                                            <i class="fas fa-trash-alt me-1"></i> Eliminar
+                                        </button>
                                     </div>
                                 </div>
                                 {% endfor %}
@@ -441,6 +444,36 @@
                                     No se pudo cargar el catálogo.
                                 </div>`;
                         });
+                });
+            });
+
+            // Eliminar catálogo
+            document.querySelectorAll('.delete-catalog').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const fileName = this.dataset.file;
+                    const item = this.closest('.history-item');
+                    if (confirm(`¿Seguro que deseas eliminar el catálogo "${fileName}"? Esta acción no se puede deshacer.`)) {
+                        const formData = new FormData();
+                        formData.append('filename', fileName);
+                        fetch('/delete_catalog', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                item.remove();
+                                // Opcional: mostrar mensaje de éxito
+                                resultsContainer.innerHTML = `<div class='alert alert-success mt-3'>Catálogo eliminado correctamente.</div>`;
+                            } else {
+                                alert(data.error || 'No se pudo eliminar el catálogo.');
+                            }
+                        })
+                        .catch(() => {
+                            alert('Error de red al intentar eliminar el catálogo.');
+                        });
+                    }
                 });
             });
         });
