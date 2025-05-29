@@ -193,20 +193,29 @@
                         <div class="list-group" id="historyList">
                             {% if history %}
                                 {% for scan in history %}
-                                <div class="history-item" data-file="{{ scan.file }}">
+                                <div class="history-item" data-serial="{{ scan.serial }}">
                                     <div class="d-flex justify-content-between">
-                                        <strong>{{ scan.name }}</strong>
+                                        <strong class="catalog-name" style="cursor:pointer;">{{ scan.name }}</strong>
                                         <small class="text-muted date-field">{{ scan.date }}</small>
                                     </div>
+                                    {% if scan.description %}
+                                    <div class="text-muted small">Volumen: {{ scan.description }}</div>
+                                    {% endif %}
+                                    {% if scan.serial %}
+                                    <div class="text-muted small">Serie: {{ scan.serial }}</div>
+                                    {% endif %}
                                     <div class="text-muted small">{{ scan.path }}</div>
                                     <div class="mt-1 d-flex gap-2">
-                                        <a href="#" class="btn btn-sm btn-outline-primary view-scan" data-file="{{ scan.file }}">
+                                        <a href="#" class="btn btn-sm btn-outline-primary view-scan" data-serial="{{ scan.serial }}">
                                             <i class="fas fa-eye me-1"></i> Ver
                                         </a>
-                                        <button class="btn btn-sm btn-outline-success update-catalog" data-file="{{ scan.file }}">
+                                        <button class="btn btn-sm btn-outline-secondary edit-catalog" title="Editar nombre" data-serial="{{ scan.serial }}">
+                                            <i class="fas fa-pen"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success update-catalog" data-serial="{{ scan.serial }}">
                                             <i class="fas fa-sync-alt me-1"></i> Actualizar
                                         </button>
-                                        <button class="btn btn-sm btn-outline-danger delete-catalog" data-file="{{ scan.file }}">
+                                        <button class="btn btn-sm btn-outline-danger delete-catalog" data-serial="{{ scan.serial }}">
                                             <i class="fas fa-trash-alt me-1"></i> Eliminar
                                         </button>
                                     </div>
@@ -351,12 +360,16 @@
                         html += `<p class="text-muted">Se encontraron ${data.length} resultados:</p>`;
                         
                         data.forEach(item => {
+                            // Extraer solo el nombre de la carpeta de la ruta completa
+                            const folderName = item.path.split(/[\\/]/).pop();
+
                             html += `
                             <div class="result-item">
                                 <div class="disk-name">
-                                    <i class="fas fa-hdd me-1"></i> ${item.disk}
+                                    <i class="fas fa-hdd me-1"></i> ${item.catalog}
                                 </div>
-                                <div class="path">${item.path}</div>
+                                <div class="path">${folderName}</div>
+                                <div class="text-muted small">${item.path}</div>
                             </div>`;
                         });
                         
@@ -438,25 +451,66 @@
             
             // Ver historial
             document.querySelectorAll('.view-scan').forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const fileName = this.dataset.file;
+                button.addEventListener('click', function() {
+                    const serial = this.dataset.serial;
+                    const resultsContainer = document.getElementById('resultsContainer');
+                    
+                    // Mostrar loader
+                    resultsContainer.innerHTML = `
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p>Cargando catálogo...</p>
+                        </div>`;
 
-                    fetch(`/catalog/${encodeURIComponent(fileName)}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            resultsContainer.innerHTML = `
-                                <div class="mb-3">
-                                    <h5 class="mb-3">Contenido de ${data.filename.replace('.txt', '')}</h5>
-                                    <pre style="max-height:400px;overflow:auto;background:#f8f9fa;padding:1em;border-radius:8px;">${data.content}</pre>
-                                </div>`;
-                            resultsContainer.scrollIntoView({behavior: 'smooth'});
+                    fetch(`/catalog/${serial}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
                         })
-                        .catch(() => {
+                        .then(data => {
+                            if (data.status !== "success" || !data.data) {
+                                throw new Error(data.message || "Respuesta inválida del servidor");
+                            }
+
+                            const catalog = data.data;
+                            
+                            // Construir HTML
                             resultsContainer.innerHTML = `
-                                <div class="alert alert-danger mt-3">
-                                    <i class="fas fa-times-circle me-2"></i> 
-                                    No se pudo cargar el catálogo.
+                                <div class="card shadow-sm mb-4">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="mb-0">${catalog.name || 'Sin nombre'}</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p><strong>Serial:</strong> ${catalog.serial}</p>
+                                                <p><strong>Ruta:</strong> <code>${catalog.path}</code></p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p><strong>Fecha:</strong> ${catalog.scan_date}</p>
+                                                <p><strong>Carpetas:</strong> ${catalog.total_folders.toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                        <hr>
+                                        <h6>Muestra de carpetas:</h6>
+                                        <div class="folder-list bg-light p-3 rounded">
+                                            ${catalog.sample_folders.map(folder => `
+                                                <div class="folder-item mb-1">${folder}</div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                </div>`;
+                        })
+                        .catch(error => {
+                            console.error("Error:", error);
+                            resultsContainer.innerHTML = `
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    ${error.message}
                                 </div>`;
                         });
                 });
@@ -466,11 +520,11 @@
             document.querySelectorAll('.delete-catalog').forEach(button => {
                 button.addEventListener('click', function(e) {
                     e.preventDefault();
-                    const fileName = this.dataset.file;
+                    const serial = this.dataset.serial;
                     const item = this.closest('.history-item');
-                    if (confirm(`¿Seguro que deseas eliminar el catálogo "${fileName}"? Esta acción no se puede deshacer.`)) {
+                    if (confirm(`¿Seguro que deseas eliminar el catálogo con serie "${serial}"? Esta acción no se puede deshacer.`)) {
                         const formData = new FormData();
-                        formData.append('filename', fileName);
+                        formData.append('serial', serial);
                         fetch('/delete_catalog', {
                             method: 'POST',
                             body: formData
@@ -479,7 +533,6 @@
                         .then(data => {
                             if (data.success) {
                                 item.remove();
-                                // Opcional: mostrar mensaje de éxito
                                 resultsContainer.innerHTML = `<div class='alert alert-success mt-3'>Catálogo eliminado correctamente.</div>`;
                             } else {
                                 alert(data.error || 'No se pudo eliminar el catálogo.');
@@ -547,8 +600,8 @@
                                             </div>
                                         </div>
                                         ${drive.letter !== 'C' ? `<div class='mt-2 text-end'><button class='btn btn-sm btn-outline-warning eject-drive' data-drive='${drive.path}'><i class='fas fa-eject me-1'></i> Expulsar</button></div>` : ''}
-                                    </div>
-                                </div>`;
+                                        </div>
+                                    </div>`;
                             });
                             drivesContainer.innerHTML = html;
                             // Reasignar eventos a las nuevas tarjetas
@@ -602,12 +655,12 @@
             document.querySelectorAll('.update-catalog').forEach(button => {
                 button.addEventListener('click', function(e) {
                     e.preventDefault();
-                    const fileName = this.dataset.file;
+                    const serial = this.dataset.serial;
                     const item = this.closest('.history-item');
                     const dateField = item.querySelector('.date-field');
-                    if (confirm(`¿Seguro que deseas actualizar el catálogo "${fileName}"? Se volverá a escanear la unidad original.`)) {
+                    if (confirm(`¿Seguro que deseas actualizar el catálogo con serie "${serial}"? Se volverá a escanear la unidad original.`)) {
                         const formData = new FormData();
-                        formData.append('catalog_file', fileName);
+                        formData.append('serial', serial);
                         fetch('/update_catalog', {
                             method: 'POST',
                             body: formData
@@ -615,7 +668,6 @@
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                // Actualizar la fecha en la interfaz
                                 const now = new Date();
                                 const fecha = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
                                 dateField.textContent = fecha;
@@ -628,6 +680,65 @@
                             alert('Error de red al intentar actualizar el catálogo.');
                         });
                     }
+                });
+            });
+
+            // Edición en línea del nombre del catálogo
+            document.querySelectorAll('.edit-catalog').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const item = this.closest('.history-item');
+                    const nameElem = item.querySelector('.catalog-name');
+                    const oldName = nameElem.textContent.trim();
+                    const serial = this.dataset.serial;
+                    if (item.querySelector('.edit-name-input')) return;
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = oldName;
+                    input.className = 'form-control form-control-sm edit-name-input';
+                    input.style.maxWidth = '200px';
+                    nameElem.replaceWith(input);
+                    input.focus();
+                    function saveEdit() {
+                        const newName = input.value.trim();
+                        if (!newName || newName === oldName) {
+                            input.replaceWith(nameElem);
+                            return;
+                        }
+                        const formData = new FormData();
+                        formData.append('serial', serial);
+                        formData.append('new_name', newName);
+                        fetch('/rename_catalog', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                const newStrong = document.createElement('strong');
+                                newStrong.className = 'catalog-name';
+                                newStrong.style.cursor = 'pointer';
+                                newStrong.textContent = data.new_name;
+                                input.replaceWith(newStrong);
+                                resultsContainer.innerHTML = `<div class='alert alert-success mt-3'>Nombre actualizado correctamente.</div>`;
+                            } else {
+                                alert(data.error || 'No se pudo renombrar el catálogo.');
+                                input.replaceWith(nameElem);
+                            }
+                        })
+                        .catch(() => {
+                            alert('Error de red al intentar renombrar el catálogo.');
+                            input.replaceWith(nameElem);
+                        });
+                    }
+                    input.addEventListener('keydown', function(ev) {
+                        if (ev.key === 'Enter') {
+                            saveEdit();
+                        } else if (ev.key === 'Escape') {
+                            input.replaceWith(nameElem);
+                        }
+                    });
+                    input.addEventListener('blur', saveEdit);
                 });
             });
         });
