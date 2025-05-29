@@ -1,6 +1,7 @@
 Listado de rutas de carpetas para el volumen Data
 El número de serie del volumen es E663-DAD2
 E:\
++---1 Nueva carpeta
 +---18 Pablito
 |   |   18 pablito.bak
 |   |   18 pablito.psh

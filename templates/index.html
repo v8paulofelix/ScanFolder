@@ -196,13 +196,16 @@
                                 <div class="history-item" data-file="{{ scan.file }}">
                                     <div class="d-flex justify-content-between">
                                         <strong>{{ scan.name }}</strong>
-                                        <small class="text-muted">{{ scan.date }}</small>
+                                        <small class="text-muted date-field">{{ scan.date }}</small>
                                     </div>
                                     <div class="text-muted small">{{ scan.path }}</div>
                                     <div class="mt-1 d-flex gap-2">
                                         <a href="#" class="btn btn-sm btn-outline-primary view-scan" data-file="{{ scan.file }}">
                                             <i class="fas fa-eye me-1"></i> Ver
                                         </a>
+                                        <button class="btn btn-sm btn-outline-success update-catalog" data-file="{{ scan.file }}">
+                                            <i class="fas fa-sync-alt me-1"></i> Actualizar
+                                        </button>
                                         <button class="btn btn-sm btn-outline-danger delete-catalog" data-file="{{ scan.file }}">
                                             <i class="fas fa-trash-alt me-1"></i> Eliminar
                                         </button>
@@ -594,6 +597,39 @@
                         });
                 });
             }
+
+            // Actualizar catálogo
+            document.querySelectorAll('.update-catalog').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const fileName = this.dataset.file;
+                    const item = this.closest('.history-item');
+                    const dateField = item.querySelector('.date-field');
+                    if (confirm(`¿Seguro que deseas actualizar el catálogo "${fileName}"? Se volverá a escanear la unidad original.`)) {
+                        const formData = new FormData();
+                        formData.append('catalog_file', fileName);
+                        fetch('/update_catalog', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Actualizar la fecha en la interfaz
+                                const now = new Date();
+                                const fecha = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+                                dateField.textContent = fecha;
+                                resultsContainer.innerHTML = `<div class='alert alert-success mt-3'>${data.message}</div>`;
+                            } else {
+                                alert(data.error || 'No se pudo actualizar el catálogo.');
+                            }
+                        })
+                        .catch(() => {
+                            alert('Error de red al intentar actualizar el catálogo.');
+                        });
+                    }
+                });
+            });
         });
     </script>
 </body>
