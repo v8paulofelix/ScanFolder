@@ -1,5 +1,37 @@
 [
   {
+    "name": "Hitachi H1",
+    "path": "E:\\",
+    "date": "2025-05-29 12:17:42",
+    "file": "E663-DAD2.json",
+    "description": "Data",
+    "serial": "E663-DAD2"
+  },
+  {
+    "name": "Prueba1 G",
+    "path": "G:\\",
+    "date": "2025-05-29 11:42:01",
+    "file": "B296-6822.json",
+    "description": null,
+    "serial": "B296-6822"
+  },
+  {
+    "name": "Prueba1 F",
+    "path": "F:\\",
+    "date": "2025-05-29 11:40:36",
+    "file": "F28D-6A85.json",
+    "description": null,
+    "serial": "F28D-6A85"
+  },
+  {
+    "name": "Prueba1 E",
+    "path": "E:\\",
+    "date": "2025-05-29 11:39:08",
+    "file": "D645-0EA9.json",
+    "description": "Reservado para el sistema",
+    "serial": "D645-0EA9"
+  },
+  {
     "name": "disco22",
     "path": "E:\\",
     "date": "2025-05-29 09:48:30",

@@ -167,35 +167,42 @@ def scan_disk():
         result = subprocess.run(command, shell=True, capture_output=True, text=True, encoding='latin-1')
         folders = [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
-        # Crear el archivo JSON del catálogo
+        # Actualizar historial: si ya existe, solo actualiza fecha, path y descripción, pero NO cambia el nombre
+        history = load_scan_history()
+        found = False
+        for entry in history:
+            if entry.get('serial') == serial:
+                entry['date'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                entry['path'] = drive_path
+                entry['file'] = f"{serial}.json"
+                entry['description'] = description
+                catalog_name = entry['name']  # Mantener el nombre original
+                found = True
+                break
+        # Crear el archivo JSON del catálogo (con el nombre correcto)
         catalog_data = {
             "serial": serial,
             "name": catalog_name,
             "path": drive_path,
             "scan_date": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             "description": description,
-            "folders": folders  # Lista de carpetas escaneadas
+            "folders": folders
         }
-
         output_file = os.path.join(CATALOGS_DIR, f"{serial}.json")
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(catalog_data, f, ensure_ascii=False, indent=2)
         print(f"Catálogo guardado en: {output_file}")
-
-        # Actualizar historial
-        history = load_scan_history()
-        history.insert(0, {
-            "name": catalog_name,
-            "path": drive_path,
-            "date": catalog_data['scan_date'],
-            "file": f"{serial}.json",  # Nombre del archivo JSON
-            "description": description,
-            "serial": serial
-        })
+        if not found:
+            history.insert(0, {
+                "name": catalog_data['name'],
+                "path": drive_path,
+                "date": catalog_data['scan_date'],
+                "file": f"{serial}.json",
+                "description": description,
+                "serial": serial
+            })
         save_scan_history(history)
-
         return jsonify({"success": True, "serial": serial})
-
     except Exception as e:
         print(f"Error en /scan: {e}")
         return jsonify({"error": str(e)}), 500
