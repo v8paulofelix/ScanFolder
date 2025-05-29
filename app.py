@@ -204,5 +204,38 @@ def get_drives_api():
     drives = get_drives()
     return jsonify(drives)
 
+@app.route('/update_catalog', methods=['POST'])
+def update_catalog():
+    catalog_file = request.form.get('catalog_file')
+    if not catalog_file or not catalog_file.endswith('.txt') or '/' in catalog_file or '\\' in catalog_file:
+        return jsonify({'success': False, 'error': 'Nombre de catálogo inválido'}), 400
+    # Buscar en el historial
+    history = load_scan_history()
+    entry = next((h for h in history if h.get('file') == catalog_file), None)
+    if not entry:
+        return jsonify({'success': False, 'error': 'Catálogo no encontrado en el historial'}), 404
+    drive_path = entry.get('path')
+    if not drive_path or not os.path.exists(drive_path):
+        return jsonify({'success': False, 'error': 'La unidad original no está conectada'}), 400
+    output_file = os.path.join(CATALOGS_DIR, catalog_file)
+    try:
+        # Usar el comando tree de Windows
+        import platform
+        system = platform.system()
+        if system == 'Windows':
+            command = f'tree "{drive_path}" /A /F > "{output_file}"'
+        elif system == 'Linux' or system == 'Darwin':
+            command = f'find "{drive_path}" -print > "{output_file}"'
+        else:
+            return jsonify({'success': False, 'error': 'Sistema operativo no soportado'}), 500
+        import subprocess
+        subprocess.run(command, shell=True, check=True)
+        # Actualizar la fecha en el historial
+        entry['date'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        save_scan_history(history)
+        return jsonify({'success': True, 'message': f'Catálogo actualizado correctamente'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error al actualizar el catálogo: {str(e)}'}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
