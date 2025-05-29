@@ -4,6 +4,7 @@ import subprocess
 import json
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file, abort
+import platform
 
 app = Flask(__name__)
 
@@ -148,6 +149,60 @@ def delete_catalog():
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/eject_drive', methods=['POST'])
+def eject_drive():
+    drive_path = request.form.get('drive_path')
+    if not drive_path:
+        return jsonify({'success': False, 'error': 'Unidad no especificada'}), 400
+
+    # Seguridad: no permitir expulsar C: ni /
+    if drive_path.strip().upper().startswith('C:') or drive_path.strip() == '/':
+        return jsonify({'success': False, 'error': 'No se puede expulsar la unidad del sistema'}), 400
+
+    system = platform.system()
+    try:
+        if system == 'Windows':
+            # Quitar barra final si existe
+            drive_letter = drive_path.rstrip('\\/').replace(':', '')
+            # Usar powershell para expulsar (solo funciona con USB extraíbles)
+            # El comando puede variar según el dispositivo, intentamos con mountvol primero
+            import subprocess
+            cmd = f'powershell -Command "[void](mountvol {drive_letter}: /p)"'
+            result = subprocess.run(cmd, shell=True)
+            if result.returncode == 0:
+                return jsonify({'success': True})
+            else:
+                return jsonify({'success': False, 'error': 'No se pudo expulsar la unidad (Windows)'}), 500
+        elif system == 'Linux':
+            # udisksctl es el método más estándar para USB
+            import subprocess
+            cmd_unmount = f'udisksctl unmount -b {drive_path}'
+            cmd_poweroff = f'udisksctl power-off -b {drive_path}'
+            subprocess.run(cmd_unmount, shell=True)
+            result = subprocess.run(cmd_poweroff, shell=True)
+            if result.returncode == 0:
+                return jsonify({'success': True})
+            else:
+                return jsonify({'success': False, 'error': 'No se pudo expulsar la unidad (Linux)'}), 500
+        elif system == 'Darwin':  # Mac
+            # diskutil para Mac
+            import subprocess
+            cmd = f'diskutil unmountDisk {drive_path}'
+            result = subprocess.run(cmd, shell=True)
+            if result.returncode == 0:
+                return jsonify({'success': True})
+            else:
+                return jsonify({'success': False, 'error': 'No se pudo expulsar la unidad (Mac)'}), 500
+        else:
+            return jsonify({'success': False, 'error': 'Sistema operativo no soportado'}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/get_drives')
+def get_drives_api():
+    drives = get_drives()
+    return jsonify(drives)
 
 if __name__ == '__main__':
     app.run(debug=True)
