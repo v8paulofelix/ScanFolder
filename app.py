@@ -1,116 +1,115 @@
-# app.py
+"""
+ScanFolder - Aplicación Web para Catalogación de Discos
+======================================================
+
+Una aplicación Flask que permite escanear unidades de almacenamiento y mantener
+un catálogo de directorios para búsquedas rápidas, incluso cuando los discos
+no están conectados.
+
+Arquitectura:
+- Flask: Servidor web y API REST
+- SQLite: Base de datos para catálogos y metadatos  
+- Multiplataforma: Windows, Linux, macOS
+
+Autor: Paulo Felix
+Versión: 1.0.0
+Licencia: MIT
+"""
+
 import os
 import subprocess
-import json
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file, abort
 import platform
 import re
 
+# Importar el nuevo sistema de almacenamiento SQLite
+from storage import get_storage
+
 app = Flask(__name__)
 
 # Configuración
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CATALOGS_DIR = os.path.join(BASE_DIR, 'catalogos')
-SCAN_HISTORY_FILE = os.path.join(BASE_DIR, 'scan_history.json')
 
-# Crear directorios necesarios
-os.makedirs(CATALOGS_DIR, exist_ok=True)
+# Inicializar el sistema de almacenamiento
+storage = get_storage()
 
-print(f"Ruta de CATALOGS_DIR: {os.path.abspath(CATALOGS_DIR)}")  # Verifica la ruta absoluta
-print(f"Contenido de catalogos/: {os.listdir(CATALOGS_DIR)}")  # Lista archivos en la carpeta
-
-# Cargar historial de escaneos
-def load_scan_history():
-    """Cargar el historial desde el archivo JSON."""
-    try:
-        if os.path.exists(SCAN_HISTORY_FILE):
-            with open(SCAN_HISTORY_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        return []  # Si el archivo no existe, retorna una lista vacía
-    except Exception as e:
-        print(f"Error al cargar el historial: {e}")
-        return []  # En caso de error, retorna una lista vacía
-
-def save_scan_history(history):
-    """Guardar el historial en el archivo JSON."""
-    try:
-        with open(SCAN_HISTORY_FILE, 'w', encoding='utf-8') as f:
-            json.dump(history, f, ensure_ascii=False, indent=2)
-        print("Historial guardado correctamente.")
-    except Exception as e:
-        print(f"Error al guardar el historial: {e}")
+print("Sistema de almacenamiento SQLite inicializado correctamente")
 
 @app.route('/')
 def index():
-    history = load_scan_history()
-    # Completar descripción y serie desde el archivo si falta
-    for entry in history:
-        # Descripción
-        if not entry.get('description'):
-            file_path = os.path.join(CATALOGS_DIR, entry.get('file', ''))
-            if os.path.exists(file_path):
-                try:
-                    with open(file_path, 'r', encoding='latin-1') as f:
-                        first_line = f.readline().strip()
-                        desc = None
-                        if 'volumen' in first_line:
-                            parts = first_line.split('volumen', 1)
-                            if len(parts) > 1:
-                                desc = parts[1].strip()
-                        elif 'volume' in first_line.lower():
-                            parts = first_line.lower().split('volume', 1)
-                            if len(parts) > 1:
-                                desc = parts[1].strip()
-                        if desc:
-                            entry['description'] = desc
-                        # Serie
-                        second_line = f.readline().strip()
-                        serial = None
-                        if "serie del volumen" in second_line.lower() or "serial number" in second_line.lower():
-                            if ':' in second_line:
-                                serial = second_line.split(':')[-1].strip()
-                        if serial:
-                            entry['serial'] = serial
-                except Exception:
-                    pass
+    """
+    Renderiza la página principal de la aplicación.
+    
+    Carga el historial de escaneos desde la base de datos SQLite y las unidades
+    disponibles en el sistema para mostrar en la interfaz web.
+    
+    Returns:
+        str: HTML renderizado de la página principal con historial y unidades
+    """
+    history = storage.get_scan_history()
     drives = get_drives()
     now = datetime.now()
     return render_template('index.html', history=history, drives=drives, now=now)
 
 @app.route('/search', methods=['GET'])
 def search():
-    query = request.args.get('q', '').lower().strip()
+    """
+    Realiza búsquedas de directorios en todos los catálogos almacenados.
+    
+    Busca el término especificado en el parámetro 'q' dentro de todas las rutas
+    de directorios catalogadas, utilizando búsqueda case-insensitive.
+    
+    Args:
+        q (str): Término de búsqueda obtenido de query parameter
+        
+    Returns:
+        JSON: Lista de resultados con formato compatible con el frontend
+        [
+            {
+                'catalog': str,     # Nombre del volumen/catálogo
+                'path': str,        # Nombre del directorio
+                'full_path': str    # Ruta completa del directorio
+            }
+        ]
+    """
+    query = request.args.get('q', '').strip()
     if not query or len(query) < 2:
         return jsonify([])
 
-    history = load_scan_history()
-    results = []
-    for entry in history:
-        if not entry.get('serial'):
-            continue
+    results = storage.search_directories(query)
+    
+    # Formatear resultados para compatibilidad con el frontend
+    formatted_results = []
+    for result in results:
+        formatted_results.append({
+            'catalog': result.get('volume_name', 'Desconocido'),
+            'path': result['directory_path'].split('\\')[-1] if '\\' in result['directory_path'] else result['directory_path'].split('/')[-1],
+            'full_path': result['directory_path']
+        })
 
-        file_path = os.path.join(CATALOGS_DIR, f"{entry['serial']}.json")
-        if not os.path.exists(file_path):
-            continue
-
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                catalog = json.load(f)
-                for folder_path in catalog.get('folders', []):
-                    if query in folder_path.lower():
-                        results.append({
-                            'catalog': entry['name'],
-                            'path': folder_path.split('\\')[-1] if '\\' in folder_path else folder_path.split('/')[-1],
-                            'full_path': folder_path
-                        })
-        except Exception:
-            continue
-
-    return jsonify(results[:100])  # Limitar resultados para evitar sobrecarga
+    return jsonify(formatted_results[:100])  # Limitar resultados para evitar sobrecarga
 
 def get_volume_info_windows(drive_letter):
-    """Obtener información del volumen en Windows con manejo robusto de errores."""
+    """
+    Obtiene información del volumen de Windows usando el comando 'vol'.
+    
+    Extrae el número de serie único del volumen y su etiqueta/descripción
+    ejecutando el comando 'vol' del sistema y parseando su salida con
+    expresiones regulares.
+    
+    Args:
+        drive_letter (str): Letra de la unidad (ej: 'C', 'D', 'E')
+        
+    Returns:
+        tuple: (descripción, serial) donde:
+            - descripción (str|None): Etiqueta del volumen o None si no se encuentra
+            - serial (str|None): Número de serie del volumen o None si no se encuentra
+            
+    Note:
+        Específico para Windows. Usa codificación 'latin-1' para manejar
+        caracteres especiales en etiquetas de volumen.
+    """
     try:
         # Ejecutar comando 'vol' con codificación 'latin-1'
         cmd = f'vol {drive_letter}:'
@@ -142,6 +141,28 @@ def get_volume_info_windows(drive_letter):
 
 @app.route('/scan', methods=['POST'])
 def scan_disk():
+    """
+    Escanea una unidad de disco y guarda su estructura de directorios.
+    
+    Realiza un escaneo completo de la unidad especificada, extrae información
+    del volumen (nombre y número de serie), cataloga todos los directorios
+    encontrados y los almacena en la base de datos SQLite.
+    
+    Form Parameters:
+        drive_path (str): Ruta de la unidad a escanear (ej: 'C:\\', 'D:\\')
+        catalog_name (str, optional): Nombre personalizado para el catálogo
+        
+    Returns:
+        JSON: Respuesta con el resultado de la operación
+        Success: {"success": True, "serial": str}
+        Error: {"error": str}, HTTP status 400/500
+        
+    Note:
+        - Usa comandos del sistema específicos por plataforma
+        - Windows: 'dir /s /b /ad' para listar solo directorios  
+        - Linux/macOS: 'find -type d' para búsqueda recursiva
+        - Actualiza escaneos existentes basándose en el número de serie del volumen
+    """
     try:
         drive_path = request.form.get('drive_path')
         catalog_name = request.form.get('catalog_name', f"Disco_{datetime.now().strftime('%Y%m%d')}")
@@ -167,48 +188,48 @@ def scan_disk():
         result = subprocess.run(command, shell=True, capture_output=True, text=True, encoding='latin-1')
         folders = [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
-        # Actualizar historial: si ya existe, solo actualiza fecha, path y descripción, pero NO cambia el nombre
-        history = load_scan_history()
-        found = False
-        for entry in history:
-            if entry.get('serial') == serial:
-                entry['date'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                entry['path'] = drive_path
-                entry['file'] = f"{serial}.json"
-                entry['description'] = description
-                catalog_name = entry['name']  # Mantener el nombre original
-                found = True
-                break
-        # Crear el archivo JSON del catálogo (con el nombre correcto)
-        catalog_data = {
-            "serial": serial,
-            "name": catalog_name,
-            "path": drive_path,
-            "scan_date": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            "description": description,
-            "folders": folders
-        }
-        output_file = os.path.join(CATALOGS_DIR, f"{serial}.json")
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(catalog_data, f, ensure_ascii=False, indent=2)
-        print(f"Catálogo guardado en: {output_file}")
-        if not found:
-            history.insert(0, {
-                "name": catalog_data['name'],
-                "path": drive_path,
-                "date": catalog_data['scan_date'],
-                "file": f"{serial}.json",
-                "description": description,
-                "serial": serial
-            })
-        save_scan_history(history)
-        return jsonify({"success": True, "serial": serial})
+        # Guardar el escaneo usando el nuevo sistema de almacenamiento
+        success = storage.add_scan(
+            serial_number=serial,
+            volume_name=description or catalog_name,
+            drive_path=drive_path,
+            directories=folders
+        )
+
+        if success:
+            return jsonify({"success": True, "serial": serial})
+        else:
+            return jsonify({"error": "Error al guardar el escaneo"}), 500
+
     except Exception as e:
         print(f"Error en /scan: {e}")
         return jsonify({"error": str(e)}), 500
 
 def get_drives():
-    """Obtener las unidades disponibles en Windows, incluyendo el nombre del volumen como descripción"""
+    """
+    Detecta y obtiene información de todas las unidades de disco disponibles.
+    
+    Escanea todas las letras de unidad posibles (A-Z) en sistemas Windows
+    y recopila información detallada de cada unidad accesible, incluyendo
+    etiqueta del volumen, espacio libre y otros metadatos.
+    
+    Returns:
+        list: Lista de diccionarios con información de cada unidad
+        [
+            {
+                'letter': str,      # Letra de la unidad (ej: 'C')
+                'path': str,        # Ruta completa (ej: 'C:\\')
+                'name': str,        # Nombre base de la unidad
+                'free_gb': float,   # Espacio libre en GB (None si no disponible)
+                'description': str  # Etiqueta del volumen (None si no disponible)
+            }
+        ]
+        
+    Note:
+        - Específico para sistemas Windows
+        - Usa subprocess para ejecutar comando 'vol' y obtener etiquetas
+        - Maneja errores de permisos y timeouts automáticamente
+    """
     drives = []
     import platform
     system = platform.system()
@@ -247,51 +268,36 @@ def get_drives():
 
 @app.route('/catalog/<serial>')
 def view_catalog(serial):
+    """Ver detalles de un catálogo específico"""
     try:
-        file_path = os.path.join(CATALOGS_DIR, f"{serial}.json")
-        
-        if not os.path.exists(file_path):
+        # Obtener información del escaneo
+        scan_info = storage.get_scan_by_serial(serial)
+        if not scan_info:
             return jsonify({
                 "status": "error",
                 "message": "Catálogo no encontrado",
                 "data": None
             }), 404
 
+        # Obtener algunos directorios de muestra
+        directories = storage.get_directories_by_scan(scan_info['id'])
+        sample_directories = directories[:10]  # Primeras 10 carpetas
 
-        with open(file_path, 'r', encoding='utf-8') as f:
-            catalog_data = json.load(f)
-
-        # Normalizar caracteres especiales
-        def normalize_text(text):
-            return text.encode('latin-1').decode('utf-8', errors='replace') if text else text
-
+        # Estructura de respuesta
         normalized_data = {
-            "name": normalize_text(catalog_data.get("name")),
-            "path": catalog_data.get("path"),
+            "name": scan_info.get("volume_name", "Sin nombre"),
+            "path": scan_info.get("drive_path", ""),
             "serial": serial,
-            "scan_date": catalog_data.get("scan_date"),
-            "total_folders": len(catalog_data.get("folders", [])),
-            "sample_folders": [normalize_text(f) for f in catalog_data.get("folders", [])[:10]]
-        }
-
-        # Estructura de respuesta mejorada
-        response = {
-            "success": True,
-            "catalog": {
-                "name": catalog_data.get("name", "Sin nombre"),
-                "serial": serial,
-                "path": catalog_data.get("path", ""),
-                "scan_date": catalog_data.get("scan_date", ""),
-                "total_folders": len(catalog_data.get("folders", [])),
-                "sample_folders": catalog_data.get("folders", [])[:10]  # Primeras 10 carpetas
-            }
+            "scan_date": scan_info.get("scan_date", ""),
+            "total_folders": scan_info.get("total_directories", 0),
+            "sample_folders": sample_directories
         }
 
         return jsonify({
-                    "status": "success",
-                    "message": "Catálogo cargado",
-                    "data": normalized_data
-                })
+            "status": "success",
+            "message": "Catálogo cargado",
+            "data": normalized_data
+        })
     
     except Exception as e:
         return jsonify({
@@ -302,20 +308,23 @@ def view_catalog(serial):
 
 @app.route('/delete_catalog', methods=['POST'])
 def delete_catalog():
+    """Eliminar un catálogo específico"""
     serial = request.form.get('serial')
     if not serial:
         return jsonify({'success': False, 'error': 'Serial no especificado'}), 400
-    history = load_scan_history()
-    entry = next((h for h in history if h.get('serial') == serial), None)
-    if not entry:
-        return jsonify({'success': False, 'error': 'Catálogo no encontrado en el historial'}), 404
-    file_path = os.path.join(CATALOGS_DIR, f"{serial}.json")
+    
+    # Verificar que el escaneo existe
+    scan_info = storage.get_scan_by_serial(serial)
+    if not scan_info:
+        return jsonify({'success': False, 'error': 'Catálogo no encontrado'}), 404
+    
     try:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        history = [h for h in history if h.get('serial') != serial]
-        save_scan_history(history)
-        return jsonify({'success': True})
+        # Eliminar el escaneo y todos sus directorios asociados
+        success = storage.delete_scan(serial)
+        if success:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Error al eliminar el catálogo'}), 500
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -375,50 +384,84 @@ def get_drives_api():
 
 @app.route('/update_catalog', methods=['POST'])
 def update_catalog():
+    """Actualizar un catálogo existente reescaneando la unidad"""
     serial = request.form.get('serial')
     if not serial:
         return jsonify({'success': False, 'error': 'Serial no especificado'}), 400
-    history = load_scan_history()
-    entry = next((h for h in history if h.get('serial') == serial), None)
-    if not entry:
-        return jsonify({'success': False, 'error': 'Catálogo no encontrado en el historial'}), 404
-    drive_path = entry.get('path')
+    
+    # Obtener información del escaneo existente
+    scan_info = storage.get_scan_by_serial(serial)
+    if not scan_info:
+        return jsonify({'success': False, 'error': 'Catálogo no encontrado'}), 404
+    
+    drive_path = scan_info.get('drive_path')
     if not drive_path or not os.path.exists(drive_path):
         return jsonify({'success': False, 'error': 'La unidad original no está conectada'}), 400
-    output_file = os.path.join(CATALOGS_DIR, f"{serial}.json")
+    
     try:
-        import platform
+        # Rescanear la unidad
         system = platform.system()
         if system == 'Windows':
-            command = f'tree "{drive_path}" /A /F > "{output_file}"'
-        elif system == 'Linux' or system == 'Darwin':
-            command = f'find "{drive_path}" -print > "{output_file}"'
+            command = f'dir "{drive_path}" /s /b /ad'
+        elif system in ('Linux', 'Darwin'):
+            command = f'find "{drive_path}" -type d -print'
         else:
             return jsonify({'success': False, 'error': 'Sistema operativo no soportado'}), 500
-        import subprocess
-        subprocess.run(command, shell=True, check=True)
-        entry['date'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        save_scan_history(history)
-        return jsonify({'success': True, 'message': f'Catálogo actualizado correctamente'})
+        
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, encoding='latin-1')
+        folders = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+        
+        # Actualizar el escaneo con los nuevos directorios
+        success = storage.add_scan(
+            serial_number=serial,
+            volume_name=scan_info.get('volume_name', ''),
+            drive_path=drive_path,
+            directories=folders
+        )
+        
+        if success:
+            return jsonify({'success': True, 'message': 'Catálogo actualizado correctamente'})
+        else:
+            return jsonify({'success': False, 'error': 'Error al actualizar el catálogo'}), 500
+            
     except Exception as e:
         return jsonify({'success': False, 'error': f'Error al actualizar el catálogo: {str(e)}'}), 500
 
 @app.route('/rename_catalog', methods=['POST'])
 def rename_catalog():
+    """Renombrar un catálogo"""
     serial = request.form.get('serial')
     new_name = request.form.get('new_name')
+    
     if not serial:
         return jsonify({'success': False, 'error': 'Serial no especificado'}), 400
     if not new_name or any(c in new_name for c in '/\\:*?"<>|'):
         return jsonify({'success': False, 'error': 'Nombre de catálogo inválido'}), 400
-    history = load_scan_history()
-    entry = next((h for h in history if h.get('serial') == serial), None)
-    if not entry:
-        return jsonify({'success': False, 'error': 'Catálogo no encontrado en el historial'}), 404
-    # Solo actualizar el nombre en el historial
-    entry['name'] = new_name
-    save_scan_history(history)
-    return jsonify({'success': True, 'new_name': new_name})
+    
+    # Obtener información del escaneo existente
+    scan_info = storage.get_scan_by_serial(serial)
+    if not scan_info:
+        return jsonify({'success': False, 'error': 'Catálogo no encontrado'}), 404
+    
+    try:
+        # Obtener todos los directorios del escaneo actual
+        directories = storage.get_directories_by_scan(scan_info['id'])
+        
+        # Actualizar el escaneo con el nuevo nombre
+        success = storage.add_scan(
+            serial_number=serial,
+            volume_name=new_name,
+            drive_path=scan_info.get('drive_path', ''),
+            directories=directories
+        )
+        
+        if success:
+            return jsonify({'success': True, 'new_name': new_name})
+        else:
+            return jsonify({'success': False, 'error': 'Error al renombrar el catálogo'}), 500
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
