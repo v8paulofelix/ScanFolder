@@ -217,14 +217,23 @@ Las contribuciones son bienvenidas. Por favor:
 4. Push a la rama (`git push origin feature/AmazingFeature`)
 5. Abre un Pull Request
 
-## Roadmap
+## Roadmap v1.0.0
 
-- [ ] Migración a base de datos SQLite
-- [ ] Mejoras en la búsqueda avanzada con filtros
-- [ ] Exportación de resultados a CSV/TXT
-- [ ] Estadísticas detalladas de catálogos
-- [ ] Interfaz de usuario mejorada con paginación
-- [ ] API REST para integración con otras aplicaciones
+**¡El roadmap detallado está en [Issues del proyecto](https://github.com/v8paulofelix/ScanFolder/issues)!**
+
+### 🎯 Funcionalidades Principales:
+- ✅ **SQLite Migration** - Base de datos moderna implementada
+- 🔄 **Búsqueda Avanzada** con filtros múltiples ([Issue #10](https://github.com/v8paulofelix/ScanFolder/issues/10))
+- 🔄 **Paginación** de resultados ([Issue #12](https://github.com/v8paulofelix/ScanFolder/issues/12))
+- 🔄 **Sistema de Exportación** CSV/JSON/PDF ([Issue #11](https://github.com/v8paulofelix/ScanFolder/issues/11))
+- 🔄 **Dashboard Analytics** avanzado ([Issue #13](https://github.com/v8paulofelix/ScanFolder/issues/13))
+
+### 🚀 API REST y Integración:
+- Endpoints RESTful para integración externa
+- Documentación OpenAPI/Swagger
+- Webhooks para notificaciones
+
+[**Ver Milestone v1.0.0 completo →**](https://github.com/v8paulofelix/ScanFolder/milestone/1)
 
 ## 🤖 Desarrollo Asistido por IA
 
