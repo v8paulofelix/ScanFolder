@@ -164,6 +164,13 @@ scan_history.json
 scandata.db
 test_storage.db
 
+# Development and temporary files
+issue_templates/
+docs_backup/
+temp_*.md
+*.tmp
+*.temp
+
 # Private documentation (internal use only)
 docs/
 proximos_pasos.md
@@ -171,13 +178,13 @@ proximos_pasos.md
 # Personal/Private configuration files
 ScanFolder.code-workspace
 *.code-workspace
-.vscode/
 
-# Git configuration (personal preferences)
+# IDEs and Editors
+.vscode/
+.idea/
+
+# Git configuration (personal preferences)  
 .gitattributes
-
-# VS Code
-.vscode/
 
 # OS generated files
 .DS_Store
