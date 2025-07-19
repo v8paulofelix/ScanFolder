@@ -36,6 +36,34 @@ ScanFolder es ideal para fotógrafos, editores de video, administradores de sist
 - 🌐 **Multiplataforma**: Soporte para Windows, Linux y macOS
 - ⏱️ **Búsqueda offline**: Encuentra carpetas sin tener los dispositivos conectados
 
+## 🚀 Roadmap v1.0.0 - ¡Contribuye al Desarrollo!
+
+ScanFolder está en desarrollo activo hacia la **versión 1.0.0**. ¡Tu contribución puede marcar la diferencia!
+
+### 🎯 Próximas Funcionalidades
+
+| 🏷️ Prioridad | 📋 Feature | 🎨 Dificultad | 📊 Estado |
+|-------------|-----------|---------------|----------|
+| 🔴 **Alta** | [🔍 Búsqueda Avanzada con Filtros](https://github.com/v8paulofelix/ScanFolder/issues/10) | Intermedio | 🟢 Disponible |
+| 🟡 **Media** | [📄 Paginación de Resultados](https://github.com/v8paulofelix/ScanFolder/issues/12) | **Principiante** | 🟢 Disponible |
+| 🟡 **Media** | [📊 Sistema de Exportación](https://github.com/v8paulofelix/ScanFolder/issues/11) | Intermedio | 🟢 Disponible |
+| 🟢 **Baja** | [📊 Dashboard de Analytics](https://github.com/v8paulofelix/ScanFolder/issues/13) | **Avanzado** | 🟢 Disponible |
+
+### 🆕 ¿Primera Contribución?
+**¡Comienza con [Issue #12 - Paginación](https://github.com/v8paulofelix/ScanFolder/issues/12)!** Está diseñado específicamente para principiantes con documentación completa y casos de prueba claros.
+
+### 🤝 ¿Cómo Contribuir?
+1. 📖 Lee nuestra [**Guía de Contribución**](CONTRIBUTING.md)
+2. 🍴 **Fork** el repositorio
+3. 🌿 Crea tu **branch** de feature
+4. 💻 **Implementa** siguiendo los criterios técnicos
+5. ✅ **Testa** tu código
+6. 📤 Crea un **Pull Request**
+
+[**Ver Milestone v1.0.0 →**](https://github.com/v8paulofelix/ScanFolder/milestone/1)
+
+---
+
 ## Instalación
 
 ### Prerrequisitos

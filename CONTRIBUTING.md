@@ -2,8 +2,26 @@
 
 ¡Gracias por tu interés en contribuir a ScanFolder! Este documento te guiará paso a paso para hacer una contribución exitosa al proyecto.
 
-## 📋 Tabla de Contenidos
+## � Roadmap v1.0.0 - ¡Únete al Desarrollo!
 
+### 🎯 Issues Priorizados (Perfecto para Empezar)
+
+| Issue | Título | Dificultad | Prioridad | Status |
+|-------|--------|------------|-----------|---------|
+| [#12](https://github.com/v8paulofelix/ScanFolder/issues/12) | 📄 Paginación en resultados | **Principiante** | Media | 🟢 Disponible |
+| [#10](https://github.com/v8paulofelix/ScanFolder/issues/10) | 🔍 Búsqueda avanzada | Intermedio | Alta | 🟢 Disponible |
+| [#11](https://github.com/v8paulofelix/ScanFolder/issues/11) | 📊 Sistema de exportación | Intermedio | Media | 🟢 Disponible |
+| [#13](https://github.com/v8paulofelix/ScanFolder/issues/13) | 📊 Dashboard analytics | **Avanzado** | Baja | 🟢 Disponible |
+
+### 🎨 ¿Por dónde empezar?
+
+- **🆕 ¿Primera contribución?** → Comienza con [Issue #12 (Paginación)](https://github.com/v8paulofelix/ScanFolder/issues/12)
+- **💪 ¿Experiencia intermedia?** → Toma [Issue #10 (Búsqueda avanzada)](https://github.com/v8paulofelix/ScanFolder/issues/10)
+- **🚀 ¿Desarrollador avanzado?** → Desafíate con [Issue #13 (Dashboard)](https://github.com/v8paulofelix/ScanFolder/issues/13)
+
+## �📋 Tabla de Contenidos
+
+- [🚀 Roadmap v1.0.0](#-roadmap-v100---únete-al-desarrollo)
 - [🐛 Reportar un Bug](#-reportar-un-bug)
 - [💡 Sugerir una Mejora](#-sugerir-una-mejora)
 - [🔧 Contribuir con Código](#-contribuir-con-código)
