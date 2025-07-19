@@ -1,5 +1,10 @@
 # ScanFolder
 
+[![AI-Assisted Development](https://img.shields.io/badge/AI--Assisted-GitHub%20Copilot-blue?style=flat-square&logo=github)](AI_DEVELOPMENT.md)
+[![Development Status](https://img.shields.io/badge/Status-Active%20Development-green?style=flat-square)]()
+[![Contributions Welcome](https://img.shields.io/badge/Contributions-Welcome-brightgreen?style=flat-square)](CONTRIBUTING.md)
+[![Good First Issues](https://img.shields.io/badge/Good%20First%20Issues-Available-orange?style=flat-square)](https://github.com/v8paulofelix/ScanFolder/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+
 Una aplicación web desarrollada en Python con Flask que permite escanear unidades de almacenamiento (discos duros, SSDs, pendrives) para catalogar su estructura de directorios y realizar búsquedas de carpetas en todos los discos escaneados, incluso cuando no están conectados.
 
 ## ¿Por qué ScanFolder?
@@ -221,13 +226,44 @@ Las contribuciones son bienvenidas. Por favor:
 - [ ] Interfaz de usuario mejorada con paginación
 - [ ] API REST para integración con otras aplicaciones
 
+## 🤖 Desarrollo Asistido por IA
+
+**ScanFolder ha sido desarrollado mediante colaboración humano-IA**, combinando:
+
+### 🧠 **Aporte Humano (Paulo Felix)**
+- ✅ **Conceptualización** y visión del producto
+- ✅ **Arquitectura** y decisiones técnicas estratégicas
+- ✅ **Requisitos funcionales** y casos de uso
+- ✅ **Roadmap** y priorización de features
+- ✅ **Experiencia de usuario** y diseño de workflows
+- ✅ **Gestión de proyecto** y organización del desarrollo
+
+### 🤖 **Asistencia de IA (GitHub Copilot)**
+- ⚙️ **Implementación** de código basada en especificaciones
+- ⚙️ **Generación** de templates y documentación
+- ⚙️ **Optimización** de consultas SQL y algoritmos
+- ⚙️ **Testing** y casos de prueba
+- ⚙️ **Estructuración** de archivos y configuración del proyecto
+
+### 🚀 **¿Por qué Transparencia?**
+Creemos en el **desarrollo ético** y queremos:
+- **Inspirar** a otros desarrolladores a explorar herramientas de IA
+- **Demostrar** que la IA puede acelerar el desarrollo manteniendo calidad
+- **Fomentar** colaboraciones humano-IA en open source
+- **Mantener** confianza total con la comunidad
+
+> **"La mejor tecnología empodera a las personas, no las reemplaza."** El cerebro estratégico sigue siendo 100% humano. 🧠✨
+
+---
+
 ## Licencia
 
 Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
 
-## Autor
+## Autor & Estrategia
 
-**Paulo Felix** - [@v8paulofelix](https://github.com/v8paulofelix)
+**Paulo Felix** - [@v8paulofelix](https://github.com/v8paulofelix)  
+*Arquitecto de Software & Product Strategy*
 
 ## Soporte
 

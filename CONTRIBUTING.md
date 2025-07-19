@@ -1,4 +1,28 @@
-# 🤝 Guía de Contribución - ScanFolder
+# 🤝 Guía de Contri- **🚀 ¿Desarrollador avanzado?** → Desafíate con [Issue #13 (Dashboard)](https://github.com/v8paulofelix/ScanFolder/issues/13)
+
+## 🤖 Nota sobre Desarrollo con IA
+
+**ScanFolder es un proyecto de desarrollo humano-IA colaborativo.** Si estás interesado en:
+- Entender cómo fue desarrollado
+- Replicar la metodología en tus proyectos  
+- Aprender sobre prompting efectivo para desarrollo
+
+👉 **Lee nuestra [Guía de Desarrollo con IA](AI_DEVELOPMENT.md)** 
+
+*Valoramos la transparencia y queremos inspirar más colaboraciones humano-IA en open source.* ✨
+
+---
+
+## 📋 Tabla de Contenidos
+
+- [🚀 Roadmap v1.0.0](#-roadmap-v100---únete-al-desarrollo)
+- [🤖 Desarrollo con IA](#-nota-sobre-desarrollo-con-ia)
+- [🐛 Reportar un Bug](#-reportar-un-bug)
+- [💡 Sugerir una Mejora](#-sugerir-una-mejora)
+- [🔧 Contribuir con Código](#-contribuir-con-código)
+- [📝 Estándares de Código](#-estándares-de-código)
+- [🧪 Pruebas](#-pruebas)
+- [📚 Documentación](#-documentación)anFolder
 
 ¡Gracias por tu interés en contribuir a ScanFolder! Este documento te guiará paso a paso para hacer una contribución exitosa al proyecto.
 
