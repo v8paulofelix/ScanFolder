@@ -164,6 +164,10 @@ scan_history.json
 scandata.db
 test_storage.db
 
+# Private documentation (internal use only)
+docs/
+proximos_pasos.md
+
 # VS Code
 .vscode/
 
