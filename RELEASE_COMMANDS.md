@@ -2,12 +2,18 @@
 
 ## Preparación para el Lanzamiento
 
-### 1. Añadir todos los archivos al repositorio
+### 1. Verificar que la documentación privada está oculta
+```bash
+git status --ignored
+# Debe mostrar docs/ como ignored
+```
+
+### 2. Añadir todos los archivos públicos al repositorio
 ```bash
 git add .
 ```
 
-### 2. Commit con mensaje descriptivo del lanzamiento
+### 3. Commit con mensaje descriptivo del lanzamiento
 ```bash
 git commit -m "feat: lanzamiento inicial ScanFolder v1.0.0
 

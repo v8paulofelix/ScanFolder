@@ -164,6 +164,18 @@ scan_history.json
 scandata.db
 test_storage.db
 
+# Private documentation (internal use only)
+docs/
+proximos_pasos.md
+
+# Personal/Private configuration files
+ScanFolder.code-workspace
+*.code-workspace
+.vscode/
+
+# Git configuration (personal preferences)
+.gitattributes
+
 # VS Code
 .vscode/
 
