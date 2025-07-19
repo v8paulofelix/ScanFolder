@@ -155,7 +155,10 @@ ScanFolder/
 
 ## Capturas de Pantalla
 
-_Las capturas de pantalla se añadirán próximamente_
+### 🖥️ Interfaz Principal
+![Interfaz Principal de ScanFolder](images/captura1.png)
+
+*Interfaz web moderna de ScanFolder mostrando las opciones de escaneo, búsqueda instantánea y gestión de catálogos de discos*
 
 ## Estructura del Proyecto
 
