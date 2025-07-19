@@ -168,6 +168,14 @@ test_storage.db
 docs/
 proximos_pasos.md
 
+# Personal/Private configuration files
+ScanFolder.code-workspace
+*.code-workspace
+.vscode/
+
+# Git configuration (personal preferences)
+.gitattributes
+
 # VS Code
 .vscode/
 
